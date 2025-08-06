@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, User, Phone, Mail, FileText, Upload } from 'lucide-react'
 import axios from 'axios'
 
-const API_BASE_URL = 'https://gestione-appuntamenti-dpik.onrender.com'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 interface Service {
   id: number
