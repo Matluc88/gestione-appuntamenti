@@ -47,6 +47,7 @@ const HomePage: React.FC = () => {
     try {
       console.log('API Base URL:', API_BASE_URL)
       console.log('Fetching services at:', new Date().toISOString())
+      console.log('Expected backend URL: https://gestione-appuntamenti-dpik.onrender.com')
       const response = await axios.get(`${API_BASE_URL}/api/services`)
       setServices(response.data.services)
     } catch (error) {
