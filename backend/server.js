@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { initializeDatabase } = require('./utils/initDatabase');
 require('dotenv').config();
 
 const app = express();
@@ -65,7 +66,13 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+  }
 });
