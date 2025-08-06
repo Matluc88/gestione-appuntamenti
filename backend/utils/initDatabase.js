@@ -37,7 +37,7 @@ async function initializeDatabase() {
     console.log(`👤 Admin: ${adminUsername} / ${adminPassword}`);
   } catch (error) {
     console.error('❌ Errore inizializzazione database:', error);
-    process.exit(1);
+    throw error;
   } finally {
     await pool.end();
   }
