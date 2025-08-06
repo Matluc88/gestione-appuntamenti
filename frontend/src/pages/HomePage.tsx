@@ -45,6 +45,7 @@ const HomePage: React.FC = () => {
 
   const fetchServices = async () => {
     try {
+      console.log('API Base URL:', API_BASE_URL)
       const response = await axios.get(`${API_BASE_URL}/api/services`)
       setServices(response.data.services)
     } catch (error) {
