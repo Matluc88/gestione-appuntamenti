@@ -70,6 +70,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📅 Deployment timestamp: ${new Date().toISOString()}`);
   
   try {
     await initializeDatabase();
