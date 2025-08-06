@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: gestione-appuntamenti-api
+    env: node
+    buildCommand: "cd backend && npm install"
+    startCommand: "cd backend && npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gestione-appuntamenti-db
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: nicovillano@libero.it
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://gestione-appuntamenti.onrender.com
+      - key: ADMIN_URL
+        value: https://admin-gestione-appuntamenti.onrender.com
+
+  - type: static_site
+    name: gestione-appuntamenti
+    buildCommand: "cd frontend && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti-api.onrender.com npm run build"
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://gestione-appuntamenti-api.onrender.com
+
+  - type: static_site
+    name: admin-gestione-appuntamenti
+    buildCommand: "cd admin && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti-api.onrender.com npm run build"
+    staticPublishPath: admin/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://gestione-appuntamenti-api.onrender.com
+
+databases:
+  - name: gestione-appuntamenti-db
+    databaseName: gestione_appuntamenti
+    user: gestione_appuntamenti
