@@ -34,7 +34,7 @@ services:
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://gestione-appuntamenti-dpik.onrender.com
+        value: https://gestione-appuntamenti.onrender.com
 
   - type: static_site
     name: gestione-appuntamenti-admin
@@ -42,7 +42,7 @@ services:
     staticPublishPath: admin/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://gestione-appuntamenti-dpik.onrender.com
+        value: https://gestione-appuntamenti.onrender.com
 
 databases:
   - name: gestione-appuntamenti-db
