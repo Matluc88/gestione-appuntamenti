@@ -47,7 +47,7 @@ const HomePage: React.FC = () => {
     try {
       console.log('🔥 FORCE REBUILD - API Base URL:', API_BASE_URL)
       console.log('🔥 FORCE REBUILD - Fetching services at:', new Date().toISOString())
-      console.log('🔥 FORCE REBUILD - Expected backend URL: https://gestione-appuntamenti-dpik.onrender.com')
+      console.log('🔥 FORCE REBUILD - Expected backend URL:', API_BASE_URL)
       console.log('🔥 FORCE REBUILD - Timestamp:', Date.now())
       const response = await axios.get(`${API_BASE_URL}/api/services`)
       setServices(response.data.services)
