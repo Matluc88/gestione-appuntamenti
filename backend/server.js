@@ -23,7 +23,8 @@ const corsOptions = {
     process.env.ADMIN_URL,
     'http://localhost:3000',
     'http://localhost:8080',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'http://localhost:8081'
   ],
   credentials: true,
   optionsSuccessStatus: 200
@@ -74,5 +75,6 @@ app.listen(PORT, '0.0.0.0', async () => {
     await initializeDatabase();
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
+    console.log('⚠️  Server continuing without database - some features may not work');
   }
 });

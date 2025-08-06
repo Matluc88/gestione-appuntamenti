@@ -1,8 +1,8 @@
 services:
   - type: web
-    name: gestione-appuntamenti-api
+    name: gestione-appuntamenti
     env: node
-    buildCommand: "cd backend && npm install"
+    buildCommand: "cd backend && npm install && node utils/initDatabase.js"
     startCommand: "cd backend && npm start"
     envVars:
       - key: NODE_VERSION
@@ -29,20 +29,20 @@ services:
         value: https://admin-gestione-appuntamenti.onrender.com
 
   - type: static_site
-    name: gestione-appuntamenti
-    buildCommand: "cd frontend && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti-api.onrender.com npm run build"
+    name: gestione-appuntamenti-frontend
+    buildCommand: "cd frontend && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti.onrender.com npm run build"
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://gestione-appuntamenti-api.onrender.com
+        value: https://gestione-appuntamenti.onrender.com
 
   - type: static_site
-    name: admin-gestione-appuntamenti
-    buildCommand: "cd admin && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti-api.onrender.com npm run build"
+    name: gestione-appuntamenti-admin
+    buildCommand: "cd admin && npm install && VITE_API_BASE_URL=https://gestione-appuntamenti.onrender.com npm run build"
     staticPublishPath: admin/dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://gestione-appuntamenti-api.onrender.com
+        value: https://gestione-appuntamenti.onrender.com
 
 databases:
   - name: gestione-appuntamenti-db
