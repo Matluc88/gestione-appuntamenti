@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
@@ -12,11 +13,14 @@ async function initializeDatabase() {
   try {
     console.log('🚀 Inizializzazione database...');
     
-    const schema = fs.readFileSync('../database/schema.sql', 'utf8');
+    const schemaPath = path.join(__dirname, '../../database/schema.sql');
+    const seedsPath = path.join(__dirname, '../../database/seeds.sql');
+    
+    const schema = fs.readFileSync(schemaPath, 'utf8');
     await pool.query(schema);
     console.log('✅ Schema creato');
     
-    const seeds = fs.readFileSync('../database/seeds.sql', 'utf8');
+    const seeds = fs.readFileSync(seedsPath, 'utf8');
     await pool.query(seeds);
     console.log('✅ Dati iniziali inseriti');
     

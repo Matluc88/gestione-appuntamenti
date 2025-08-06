@@ -6,7 +6,7 @@ const { initializeDatabase } = require('./utils/initDatabase');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 app.use(helmet());
 
@@ -47,6 +47,15 @@ app.use('/api/closures', require('./routes/closures'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/upload', require('./routes/upload'));
 
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'API funziona correttamente',
+    timestamp: new Date().toISOString(),
+    endpoints: ['/api/services', '/api/appointments', '/api/admin', '/api/closures', '/api/upload'],
+    uptime: process.uptime()
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -70,9 +79,12 @@ app.use((error, req, res, next) => {
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📅 Deployment timestamp: ${new Date().toISOString()}`);
+  console.log(`🔗 Server listening on 0.0.0.0:${PORT}`);
   
   try {
     await initializeDatabase();
+    console.log('✅ Database initialization completed successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     console.log('⚠️  Server continuing without database - some features may not work');
