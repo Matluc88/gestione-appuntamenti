@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: gestione-appuntamenti
+    name: gestione-appuntamenti-dpik
     env: node
     buildCommand: "cd backend && npm install"
     startCommand: "cd backend && npm start"
