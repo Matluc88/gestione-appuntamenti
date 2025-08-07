@@ -105,9 +105,21 @@ router.post('/login', validateAdminLogin, async (req, res) => {
 
 router.get('/appointments', authenticateAdmin, async (req, res) => {
   try {
-    const { date, status } = req.query;
+    const { 
+      date, 
+      status, 
+      date_from, 
+      date_to, 
+      service_id, 
+      search, 
+      page = 1, 
+      limit = 20, 
+      sort = 'appointment_date',
+      order = 'DESC'
+    } = req.query;
     
     let query = 'SELECT * FROM appointments';
+    let countQuery = 'SELECT COUNT(*) FROM appointments';
     let params = [];
     let conditions = [];
 
@@ -116,19 +128,59 @@ router.get('/appointments', authenticateAdmin, async (req, res) => {
       params.push(date);
     }
 
+    if (date_from) {
+      conditions.push('appointment_date >= $' + (params.length + 1));
+      params.push(date_from);
+    }
+    if (date_to) {
+      conditions.push('appointment_date <= $' + (params.length + 1));
+      params.push(date_to);
+    }
+
+    if (service_id) {
+      conditions.push('service_type = $' + (params.length + 1));
+      params.push(service_id);
+    }
+
     if (status) {
       conditions.push('status = $' + (params.length + 1));
       params.push(status);
     }
 
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
+    if (search) {
+      conditions.push('(customer_name ILIKE $' + (params.length + 1) + ' OR customer_surname ILIKE $' + (params.length + 1) + ' OR customer_email ILIKE $' + (params.length + 1) + ' OR customer_phone ILIKE $' + (params.length + 1) + ')');
+      params.push(`%${search}%`);
     }
 
-    query += ' ORDER BY appointment_date, appointment_time';
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      query += whereClause;
+      countQuery += whereClause;
+    }
+
+    const countResult = await pool.query(countQuery, params);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    const validSortFields = ['appointment_date', 'appointment_time', 'service_type', 'customer_name', 'status', 'created_at'];
+    const sortField = validSortFields.includes(sort) ? sort : 'appointment_date';
+    const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    
+    query += ` ORDER BY ${sortField} ${sortOrder}`;
+    query += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(parseInt(limit));
+    params.push((parseInt(page) - 1) * parseInt(limit));
 
     const result = await pool.query(query, params);
-    res.json({ appointments: result.rows });
+    
+    res.json({ 
+      appointments: result.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: totalCount,
+        pages: Math.ceil(totalCount / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error('Error fetching appointments:', error);
     res.status(500).json({ error: 'Errore nel recupero degli appuntamenti' });
@@ -164,5 +216,47 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
     res.status(500).json({ error: 'Errore nel recupero delle statistiche' });
   }
 });
+
+router.put('/appointments/:id/status', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+
+    if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
+      return res.status(400).json({ error: 'Stato non valido' })
+    }
+
+    const result = await pool.query(
+      'UPDATE appointments SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [status, id]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Appuntamento non trovato' })
+    }
+
+    res.json({ success: true, appointment: result.rows[0] })
+  } catch (error) {
+    console.error('Error updating appointment status:', error)
+    res.status(500).json({ error: 'Errore nell\'aggiornamento dello stato' })
+  }
+})
+
+router.delete('/appointments/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const result = await pool.query('DELETE FROM appointments WHERE id = $1 RETURNING *', [id])
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Appuntamento non trovato' })
+    }
+
+    res.json({ success: true, message: 'Appuntamento eliminato con successo' })
+  } catch (error) {
+    console.error('Error deleting appointment:', error)
+    res.status(500).json({ error: 'Errore nell\'eliminazione dell\'appuntamento' })
+  }
+})
 
 module.exports = router;
