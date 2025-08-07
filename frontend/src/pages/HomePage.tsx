@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, User, Phone, Mail, FileText, Upload } from 'lucide-react'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000'
 
 interface Service {
   id: number
@@ -45,10 +45,8 @@ const HomePage: React.FC = () => {
 
   const fetchServices = async () => {
     try {
-      console.log('🔥 FORCE REBUILD - API Base URL:', API_BASE_URL)
-      console.log('🔥 FORCE REBUILD - Fetching services at:', new Date().toISOString())
-      console.log('🔥 FORCE REBUILD - Expected backend URL: https://gestione-appuntamenti-dpik.onrender.com')
-      console.log('🔥 FORCE REBUILD - Timestamp:', Date.now())
+      console.log('API Base URL:', API_BASE_URL)
+      console.log('Fetching services at:', new Date().toISOString())
       const response = await axios.get(`${API_BASE_URL}/api/services`)
       setServices(response.data.services)
     } catch (error) {
