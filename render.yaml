@@ -2,7 +2,7 @@ services:
   - type: web
     name: gestione-appuntamenti-backend-2025
     env: node
-    buildCommand: "cd backend && npm install"
+    buildCommand: "cd backend && npm install --production=false"
     startCommand: "cd backend && npm start"
     envVars:
       - key: NODE_VERSION
