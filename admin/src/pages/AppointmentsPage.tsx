@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Search, Filter, Download, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, Search, Filter, Download, Eye, Trash2, ChevronLeft, ChevronRight, Mail } from 'lucide-react'
 import axios from 'axios'
 
 interface Appointment {
@@ -13,6 +13,7 @@ interface Appointment {
   appointment_date: string
   appointment_time: string
   status: string
+  cancelled_by?: string
   patronato_service?: string
   created_at: string
 }
@@ -36,6 +37,10 @@ const AppointmentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailAppointment, setEmailAppointment] = useState<Appointment | null>(null)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, pages: 0 })
   
   const [filters, setFilters] = useState({
@@ -111,6 +116,26 @@ const AppointmentsPage: React.FC = () => {
     }
   }
 
+  const sendCancellationEmail = async () => {
+    if (!emailAppointment || !cancellationReason.trim()) return
+    
+    setSendingEmail(true)
+    try {
+      await axios.post(`/api/admin/appointments/${emailAppointment.id}/send-cancellation-email`, {
+        reason: cancellationReason
+      })
+      alert('Email di cancellazione inviata con successo!')
+      setShowEmailModal(false)
+      setCancellationReason('')
+      setEmailAppointment(null)
+    } catch (error) {
+      console.error('Error sending cancellation email:', error)
+      alert('Errore nell\'invio dell\'email di cancellazione')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   const exportToCSV = () => {
     const headers = ['Data', 'Orario', 'Servizio', 'Cliente', 'Telefono', 'Email', 'Stato', 'Note']
     const csvData = appointments.map(apt => [
@@ -120,7 +145,7 @@ const AppointmentsPage: React.FC = () => {
       `${apt.customer_name} ${apt.customer_surname}`,
       apt.customer_phone,
       apt.customer_email,
-      getStatusText(apt.status),
+      getStatusText(apt.status, apt.cancelled_by),
       apt.notes || ''
     ])
     
@@ -168,12 +193,12 @@ const AppointmentsPage: React.FC = () => {
     }
   }
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, cancelledBy?: string) => {
     switch (status) {
       case 'confirmed':
         return 'Confermato'
       case 'cancelled':
-        return 'Cancellato'
+        return cancelledBy === 'client' ? 'Cancellato da Cliente' : 'Cancellato'
       case 'completed':
         return 'Completato'
       default:
@@ -429,15 +454,20 @@ const AppointmentsPage: React.FC = () => {
                         {appointment.customer_email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={appointment.status}
-                          onChange={(e) => updateAppointmentStatus(appointment.id, e.target.value)}
-                          className={`px-2 py-1 text-xs font-medium rounded-full border-0 ${getStatusColor(appointment.status)}`}
-                        >
-                          <option value="confirmed">Confermato</option>
-                          <option value="completed">Completato</option>
-                          <option value="cancelled">Cancellato</option>
-                        </select>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
+                            {getStatusText(appointment.status, appointment.cancelled_by)}
+                          </span>
+                          <select
+                            value={appointment.status}
+                            onChange={(e) => updateAppointmentStatus(appointment.id, e.target.value)}
+                            className="text-xs border border-gray-300 rounded px-1 py-0.5"
+                          >
+                            <option value="confirmed">Confermato</option>
+                            <option value="completed">Completato</option>
+                            <option value="cancelled">Cancellato</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -447,12 +477,26 @@ const AppointmentsPage: React.FC = () => {
                               setShowModal(true)
                             }}
                             className="text-primary-600 hover:text-primary-900"
+                            title="Visualizza dettagli"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {appointment.status === 'cancelled' && (
+                            <button
+                              onClick={() => {
+                                setEmailAppointment(appointment)
+                                setShowEmailModal(true)
+                              }}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Invia email cancellazione"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => deleteAppointment(appointment.id)}
                             className="text-red-600 hover:text-red-900"
+                            title="Elimina appuntamento"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -564,7 +608,7 @@ const AppointmentsPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Stato</label>
                   <span className={`mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedAppointment.status)}`}>
-                    {getStatusText(selectedAppointment.status)}
+                    {getStatusText(selectedAppointment.status, selectedAppointment.cancelled_by)}
                   </span>
                 </div>
                 <div>
@@ -605,6 +649,77 @@ const AppointmentsPage: React.FC = () => {
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
               >
                 Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEmailModal && emailAppointment && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Invia Email di Cancellazione</h3>
+              <button
+                onClick={() => {
+                  setShowEmailModal(false)
+                  setCancellationReason('')
+                  setEmailAppointment(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <span className="sr-only">Chiudi</span>
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Appuntamento
+                </label>
+                <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                  {emailAppointment.customer_name} {emailAppointment.customer_surname} - {emailAppointment.service_type}
+                  <br />
+                  {formatDate(emailAppointment.appointment_date)} alle {emailAppointment.appointment_time}
+                  <br />
+                  Email: {emailAppointment.customer_email}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Motivo della cancellazione *
+                </label>
+                <textarea
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="Inserisci il motivo della cancellazione..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={4}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowEmailModal(false)
+                  setCancellationReason('')
+                  setEmailAppointment(null)
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                disabled={sendingEmail}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={sendCancellationEmail}
+                disabled={!cancellationReason.trim() || sendingEmail}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingEmail ? 'Invio in corso...' : 'Invia Email'}
               </button>
             </div>
           </div>

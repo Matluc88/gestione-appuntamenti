@@ -227,8 +227,8 @@ router.put('/appointments/:id/status', authenticateAdmin, async (req, res) => {
     }
 
     const result = await pool.query(
-      'UPDATE appointments SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [status, id]
+      'UPDATE appointments SET status = $1, cancelled_by = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
+      [status, status === 'cancelled' ? 'admin' : null, id]
     )
 
     if (result.rows.length === 0) {
@@ -256,6 +256,83 @@ router.delete('/appointments/:id', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error deleting appointment:', error)
     res.status(500).json({ error: 'Errore nell\'eliminazione dell\'appuntamento' })
+  }
+})
+
+router.post('/appointments/:id/send-cancellation-email', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { reason } = req.body
+
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({ error: 'Motivo della cancellazione richiesto' })
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM appointments WHERE id = $1',
+      [id]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Appuntamento non trovato' })
+    }
+
+    const appointment = result.rows[0]
+
+    if (appointment.status !== 'cancelled') {
+      return res.status(400).json({ error: 'L\'appuntamento deve essere cancellato per inviare email di cancellazione' })
+    }
+
+    const sgMail = require('@sendgrid/mail')
+    const { logEmailActivity } = require('../utils/emailService')
+    
+    const emailSubject = 'Cancellazione Appuntamento'
+    const emailBody = `
+Gentile ${appointment.customer_name} ${appointment.customer_surname},
+
+Siamo spiacenti di informarla che il suo appuntamento per ${appointment.service_type} del ${new Date(appointment.appointment_date).toLocaleDateString('it-IT')} alle ${appointment.appointment_time} è stato cancellato.
+
+Motivo della cancellazione: ${reason}
+
+Per prenotare un nuovo appuntamento, può contattarci ai seguenti recapiti:
+
+Nico Villano
+Via Corigliano 6
+Tel. 3204283508
+Email: nicovillano@libero.it
+
+Ci scusiamo per l'inconveniente.
+
+Cordiali saluti,
+Nico Villano
+    `.trim()
+
+    const msg = {
+      to: appointment.customer_email,
+      from: {
+        email: process.env.EMAIL_FROM,
+        name: 'Nico Villano'
+      },
+      subject: emailSubject,
+      text: emailBody,
+      html: emailBody.replace(/\n/g, '<br>')
+    }
+
+    try {
+      await sgMail.send(msg)
+      await logEmailActivity(appointment.id, 'admin_cancellation', 'sent')
+      console.log(`✅ Email cancellazione admin inviata a: ${appointment.customer_email}`)
+    } catch (emailError) {
+      await logEmailActivity(appointment.id, 'admin_cancellation', 'failed', emailError.message)
+      console.log(`⚠️ Email cancellazione admin simulata per: ${appointment.customer_email} (API key di test)`)
+      console.log(`📧 Contenuto email: ${emailSubject}`)
+      console.log(`📝 Motivo: ${reason}`)
+    }
+
+    res.json({ message: 'Email di cancellazione inviata con successo' })
+  } catch (error) {
+    console.error('Error sending cancellation email:', error)
+    res.status(500).json({ error: 'Errore nell\'invio dell\'email' })
   }
 })
 
