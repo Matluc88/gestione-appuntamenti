@@ -7,7 +7,7 @@ const replaceVariables = (template, variables) => {
   let content = template;
   Object.keys(variables).forEach(key => {
     const placeholder = `[${key}]`;
-    content = content.replace(new RegExp(placeholder, 'g'), variables[key]);
+    content = content.split(placeholder).join(variables[key]);
   });
   return content;
 };
@@ -323,5 +323,6 @@ module.exports = {
   sendClosureNotificationEmail,
   scheduleReminders,
   processPendingReminders,
-  logEmailActivity
+  logEmailActivity,
+  replaceVariables
 };
