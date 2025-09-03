@@ -73,9 +73,31 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS email_logs (
+    id SERIAL PRIMARY KEY,
+    appointment_id INTEGER REFERENCES appointments(id) ON DELETE CASCADE,
+    email_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('sent', 'failed', 'pending')),
+    error_message TEXT,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS email_reminders (
+    id SERIAL PRIMARY KEY,
+    appointment_id INTEGER REFERENCES appointments(id) ON DELETE CASCADE,
+    reminder_type VARCHAR(10) NOT NULL CHECK (reminder_type IN ('24h', '2h')),
+    scheduled_for TIMESTAMP NOT NULL,
+    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'sent', 'failed', 'cancelled')),
+    sent_at TIMESTAMP,
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date);
 CREATE INDEX IF NOT EXISTS idx_appointments_time ON appointments(appointment_time);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 CREATE INDEX IF NOT EXISTS idx_appointments_cancel_token ON appointments(cancel_token);
 CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
 CREATE INDEX IF NOT EXISTS idx_closures_dates ON closures(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_email_logs_appointment ON email_logs(appointment_id);
+CREATE INDEX IF NOT EXISTS idx_email_reminders_scheduled ON email_reminders(scheduled_for, status);

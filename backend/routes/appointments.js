@@ -49,7 +49,12 @@ router.post('/', validateAppointment, async (req, res) => {
 
     const appointment = result.rows[0];
 
-    await emailService.sendConfirmationEmail(appointment);
+    try {
+      await emailService.sendConfirmationEmail(appointment);
+      await emailService.scheduleReminders(appointment);
+    } catch (emailError) {
+      console.error('Email/reminder error (appointment still created):', emailError.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -120,7 +125,16 @@ router.delete('/cancel/:token', async (req, res) => {
       ['cancelled', token]
     );
 
-    await emailService.sendCancellationEmail(appointmentData);
+    await pool.query(
+      'UPDATE email_reminders SET status = $1 WHERE appointment_id = $2 AND status = $3',
+      ['cancelled', appointmentData.id, 'scheduled']
+    );
+
+    try {
+      await emailService.sendCancellationEmail(appointmentData);
+    } catch (emailError) {
+      console.error('Email cancellation error (appointment still cancelled):', emailError.message);
+    }
 
     res.json({ success: true, message: 'Appuntamento cancellato con successo' });
   } catch (error) {
