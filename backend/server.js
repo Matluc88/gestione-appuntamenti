@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { initializeDatabase } = require('./utils/initDatabase');
+const { startEmailReminderCron, startDailyCleanup } = require('./utils/cronJobs');
 require('dotenv').config();
 
 const app = express();
@@ -85,6 +86,17 @@ app.listen(PORT, '0.0.0.0', async () => {
   try {
     await initializeDatabase();
     console.log('✅ Database initialization completed successfully');
+    
+    startEmailReminderCron();
+    startDailyCleanup();
+    
+    if (process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM) {
+      console.log('✅ Email service configured successfully');
+      console.log(`📧 Email from: ${process.env.EMAIL_FROM}`);
+    } else {
+      console.warn('⚠️  Email service not configured - missing SENDGRID_API_KEY or EMAIL_FROM');
+    }
+    
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     console.log('⚠️  Server continuing without database - some features may not work');
