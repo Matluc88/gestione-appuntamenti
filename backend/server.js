@@ -47,6 +47,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/closures', require('./routes/closures'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/diagnostic', require('./routes/diagnostic'));
 
 app.get('/', (req, res) => {
   res.json({ 
