@@ -316,11 +316,68 @@ const processPendingReminders = async () => {
   }
 };
 
+const sendAdminNotification = async (appointment, notificationType = 'client_cancellation') => {
+  try {
+    const adminResult = await pool.query(
+      'SELECT email FROM admin_users WHERE email IS NOT NULL LIMIT 1'
+    );
+
+    if (adminResult.rows.length === 0) {
+      console.warn('⚠️ Nessun admin email configurato per notifiche');
+      return { success: false, reason: 'No admin email configured' };
+    }
+
+    const adminEmail = adminResult.rows[0].email;
+    
+    const subject = `🚨 Cancellazione Cliente - ${appointment.service_type}`;
+    const body = `
+Ciao,
+
+Un cliente ha appena cancellato il suo appuntamento:
+
+👤 Cliente: ${appointment.customer_name} ${appointment.customer_surname}
+📧 Email: ${appointment.customer_email}
+📞 Telefono: ${appointment.customer_phone}
+🗓️ Data: ${new Date(appointment.appointment_date).toLocaleDateString('it-IT')}
+⏰ Ora: ${appointment.appointment_time}
+🔧 Servizio: ${appointment.service_type}
+📝 Note: ${appointment.notes || 'Nessuna nota'}
+
+La cancellazione è avvenuta tramite il link email del cliente.
+
+---
+Sistema di Gestione Appuntamenti
+    `.trim();
+
+    const msg = {
+      to: adminEmail,
+      from: {
+        email: process.env.EMAIL_FROM,
+        name: 'Sistema Gestione Appuntamenti'
+      },
+      subject: subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    };
+
+    const result = await sendEmailWithRetry(msg);
+    await logEmailActivity(appointment.id, 'admin_notification', 'sent');
+    console.log(`✅ Notifica admin inviata a: ${adminEmail} (tentativo ${result.attempt})`);
+    
+    return { success: true };
+  } catch (error) {
+    await logEmailActivity(appointment.id, 'admin_notification', 'failed', error.message);
+    console.error('❌ Errore invio notifica admin:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   sendConfirmationEmail,
   sendCancellationEmail,
   sendReminderEmail,
   sendClosureNotificationEmail,
+  sendAdminNotification,
   scheduleReminders,
   processPendingReminders,
   logEmailActivity,

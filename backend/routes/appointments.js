@@ -132,6 +132,7 @@ router.delete('/cancel/:token', async (req, res) => {
 
     try {
       await emailService.sendCancellationEmail(appointmentData);
+      await emailService.sendAdminNotification(appointmentData, 'client_cancellation');
     } catch (emailError) {
       console.error('Email cancellation error (appointment still cancelled):', emailError.message);
     }
