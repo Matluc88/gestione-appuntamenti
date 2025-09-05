@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'cancelled', 'completed')),
     files_uploaded JSONB DEFAULT '[]',
     patronato_service VARCHAR(50),
+    cancelled_by VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
