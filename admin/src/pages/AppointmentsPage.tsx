@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Search, Filter, Download, Eye, Trash2, ChevronLeft, ChevronRight, Mail } from 'lucide-react'
+import { Calendar, Search, Filter, Download, Eye, Trash2, ChevronLeft, ChevronRight, Mail, RefreshCw } from 'lucide-react'
 import axios from 'axios'
 
 interface Appointment {
@@ -42,6 +42,8 @@ const AppointmentsPage: React.FC = () => {
   const [cancellationReason, setCancellationReason] = useState('')
   const [sendingEmail, setSendingEmail] = useState(false)
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, pages: 0 })
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [refreshInterval, setRefreshInterval] = useState<number | null>(null)
   
   const [filters, setFilters] = useState({
     date_from: '',
@@ -60,6 +62,22 @@ const AppointmentsPage: React.FC = () => {
   useEffect(() => {
     fetchAppointments()
   }, [filters, pagination.page, sort])
+
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(() => {
+        fetchAppointments()
+      }, 30000)
+      setRefreshInterval(interval)
+    } else if (refreshInterval) {
+      clearInterval(refreshInterval)
+      setRefreshInterval(null)
+    }
+    
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval)
+    }
+  }, [autoRefresh])
 
   const fetchServices = async () => {
     try {
@@ -180,6 +198,10 @@ const AppointmentsPage: React.FC = () => {
     }))
   }
 
+  const handleManualRefresh = () => {
+    fetchAppointments()
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -276,6 +298,27 @@ const AppointmentsPage: React.FC = () => {
           </button>
         </div>
         
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={handleManualRefresh}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            {loading ? 'Aggiornamento...' : 'Aggiorna'}
+          </button>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="rounded"
+            />
+            Auto-aggiornamento (30s)
+          </label>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
