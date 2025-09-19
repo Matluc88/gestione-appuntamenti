@@ -120,20 +120,30 @@ router.delete('/cancel/:token', async (req, res) => {
 
     let appointmentDateTime;
     try {
-      const dateTimeString = `${appointmentData.appointment_date}T${appointmentData.appointment_time}`;
+      const dateStr = appointmentData.appointment_date; // YYYY-MM-DD
+      const timeStr = appointmentData.appointment_time; // HH:MM:SS or HH:MM
       
-      const tempDate = new Date(dateTimeString);
-      if (isNaN(tempDate.getTime())) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      
+      const timeParts = timeStr.split(':').map(Number);
+      const hours = timeParts[0] || 0;
+      const minutes = timeParts[1] || 0;
+      const seconds = timeParts[2] || 0;
+      
+      appointmentDateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+      
+      const italianOffset = -2 * 60; // UTC+2 = -120 minutes offset
+      appointmentDateTime = new Date(appointmentDateTime.getTime() - (italianOffset * 60 * 1000));
+      
+      if (isNaN(appointmentDateTime.getTime())) {
         throw new Error('Data non valida');
       }
-      
-      appointmentDateTime = new Date(tempDate.toLocaleString("sv-SE", {timeZone: "Europe/Rome"}));
     } catch (dateError) {
       console.error('Errore parsing data:', appointmentData);
       return res.status(400).json({ error: 'Data appuntamento non valida' });
     }
 
-    const now = new Date(new Date().toLocaleString("sv-SE", {timeZone: "Europe/Rome"}));
+    const now = new Date();
     const hoursUntilAppointment = (appointmentDateTime - now) / (1000 * 60 * 60);
 
     if (hoursUntilAppointment < 24) {
