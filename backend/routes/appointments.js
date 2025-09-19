@@ -112,7 +112,23 @@ router.delete('/cancel/:token', async (req, res) => {
     }
 
     const appointmentData = appointment.rows[0];
-    const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
+    
+    if (!appointmentData.appointment_date || !appointmentData.appointment_time) {
+      console.error('Dati appuntamento incompleti:', appointmentData);
+      return res.status(400).json({ error: 'Dati appuntamento non validi' });
+    }
+
+    let appointmentDateTime;
+    try {
+      appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
+      if (isNaN(appointmentDateTime.getTime())) {
+        throw new Error('Data non valida');
+      }
+    } catch (dateError) {
+      console.error('Errore parsing data:', appointmentData);
+      return res.status(400).json({ error: 'Data appuntamento non valida' });
+    }
+
     const now = new Date();
     const hoursUntilAppointment = (appointmentDateTime - now) / (1000 * 60 * 60);
 
