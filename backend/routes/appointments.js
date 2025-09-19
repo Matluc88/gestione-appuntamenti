@@ -118,36 +118,11 @@ router.delete('/cancel/:token', async (req, res) => {
       return res.status(400).json({ error: 'Dati appuntamento non validi' });
     }
 
-    let appointmentDateTime;
-    try {
-      const dateStr = appointmentData.appointment_date; // YYYY-MM-DD
-      const timeStr = appointmentData.appointment_time; // HH:MM:SS or HH:MM
-      
-      const [year, month, day] = dateStr.split('-').map(Number);
-      
-      const timeParts = timeStr.split(':').map(Number);
-      const hours = timeParts[0] || 0;
-      const minutes = timeParts[1] || 0;
-      const seconds = timeParts[2] || 0;
-      
-      appointmentDateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-      
-      const italianOffset = -2 * 60; // UTC+2 = -120 minutes offset
-      appointmentDateTime = new Date(appointmentDateTime.getTime() - (italianOffset * 60 * 1000));
-      
-      if (isNaN(appointmentDateTime.getTime())) {
-        throw new Error('Data non valida');
-      }
-    } catch (dateError) {
-      console.error('Errore parsing data:', appointmentData);
-      return res.status(400).json({ error: 'Data appuntamento non valida' });
-    }
-
-    const now = new Date();
-    const hoursUntilAppointment = (appointmentDateTime - now) / (1000 * 60 * 60);
-
-    if (hoursUntilAppointment < 24) {
-      return res.status(400).json({ error: 'Impossibile cancellare con meno di 24 ore di anticipo' });
+    const appointmentDate = appointmentData.appointment_date; // YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+    
+    if (appointmentDate <= today) {
+      return res.status(400).json({ error: 'Impossibile cancellare appuntamenti nella stessa giornata' });
     }
 
     await pool.query(
