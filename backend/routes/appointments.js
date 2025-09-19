@@ -120,24 +120,21 @@ router.delete('/cancel/:token', async (req, res) => {
 
     let appointmentDateTime;
     try {
-      appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
-      if (isNaN(appointmentDateTime.getTime())) {
+      const dateTimeString = `${appointmentData.appointment_date}T${appointmentData.appointment_time}`;
+      
+      const tempDate = new Date(dateTimeString);
+      if (isNaN(tempDate.getTime())) {
         throw new Error('Data non valida');
       }
+      
+      appointmentDateTime = new Date(tempDate.toLocaleString("sv-SE", {timeZone: "Europe/Rome"}));
     } catch (dateError) {
       console.error('Errore parsing data:', appointmentData);
       return res.status(400).json({ error: 'Data appuntamento non valida' });
     }
 
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString("sv-SE", {timeZone: "Europe/Rome"}));
     const hoursUntilAppointment = (appointmentDateTime - now) / (1000 * 60 * 60);
-
-    console.log('DEBUG - Date calculation:');
-    console.log('  appointment_date:', appointmentData.appointment_date);
-    console.log('  appointment_time:', appointmentData.appointment_time);
-    console.log('  appointmentDateTime:', appointmentDateTime.toISOString());
-    console.log('  now:', now.toISOString());
-    console.log('  hoursUntilAppointment:', hoursUntilAppointment);
 
     if (hoursUntilAppointment < 24) {
       return res.status(400).json({ error: 'Impossibile cancellare con meno di 24 ore di anticipo' });
