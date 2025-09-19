@@ -132,6 +132,13 @@ router.delete('/cancel/:token', async (req, res) => {
     const now = new Date();
     const hoursUntilAppointment = (appointmentDateTime - now) / (1000 * 60 * 60);
 
+    console.log('DEBUG - Date calculation:');
+    console.log('  appointment_date:', appointmentData.appointment_date);
+    console.log('  appointment_time:', appointmentData.appointment_time);
+    console.log('  appointmentDateTime:', appointmentDateTime.toISOString());
+    console.log('  now:', now.toISOString());
+    console.log('  hoursUntilAppointment:', hoursUntilAppointment);
+
     if (hoursUntilAppointment < 24) {
       return res.status(400).json({ error: 'Impossibile cancellare con meno di 24 ore di anticipo' });
     }
