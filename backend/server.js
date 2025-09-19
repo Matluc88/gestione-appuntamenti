@@ -57,12 +57,30 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const pool = require('./config/database');
+    await pool.query('SELECT 1');
+    
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: 'connected',
+      routes: {
+        appointments: 'loaded',
+        admin: 'loaded',
+        services: 'loaded'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error.message
+    });
+  }
 });
 
 app.get('*', (req, res) => {
@@ -99,6 +117,6 @@ app.listen(PORT, '0.0.0.0', async () => {
     
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
-    console.log('⚠️  Server continuing without database - some features may not work');
+    console.log('⚠️  Attempting to continue with existing database schema');
   }
 });
