@@ -137,8 +137,8 @@ router.delete('/cancel/:token', async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE appointments SET status = $1, cancelled_by = $2, updated_at = CURRENT_TIMESTAMP WHERE cancel_token = $3',
-      ['cancelled', 'client', token]
+      'UPDATE appointments SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE cancel_token = $2',
+      ['cancelled', token]
     );
 
     await pool.query(
