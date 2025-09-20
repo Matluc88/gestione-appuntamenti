@@ -11,28 +11,98 @@ INSERT INTO services (name, slug, requires_upload, requires_notes, has_options, 
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO email_templates (template_name, subject, body, variables) VALUES
-('confirmation', 'Conferma Prenotazione - Nico Villano', 
-'Gentile [Nome], la sua prenotazione per [Servizio] è confermata per [Data] alle [Ora]. DETTAGLI: Servizio [Servizio] presso Nico Villano, Via Corigliano 6. Per cancellare (almeno 24h prima): [Link]. Info: Tel. 3204283508 - nicovillano@libero.it', 
+('confirmation', 'Conferma Appuntamento - Nico Villano Consulenza', 
+'Gentile [Nome],
+
+La sua prenotazione è stata confermata con successo.
+
+DETTAGLI APPUNTAMENTO:
+• Servizio: [Servizio]
+• Data: [Data]
+• Orario: [Ora]
+• Presso: Nico Villano - Via Corigliano 6
+
+INFORMAZIONI UTILI:
+• Per modifiche o cancellazioni (almeno 24 ore prima): [Link]
+• Contatti: Tel. 3204283508 | Email: nicovillano@libero.it
+
+La ringraziamo per la fiducia accordataci.
+
+Cordiali saluti,
+Nico Villano
+Consulenza Fiscale e Patronato', 
 '["Nome", "Servizio", "Data", "Ora", "Link"]'),
 
 ('reminder', 'Promemoria Appuntamento - Nico Villano',
-'Promemoria: domani alle [Ora] ha appuntamento per [Servizio] presso Nico Villano, Via Corigliano 6. La aspettiamo puntualmente. Per info: Tel. 3204283508 - nicovillano@libero.it',
+'Gentile Cliente,
+
+Le ricordiamo il suo appuntamento programmato per domani:
+
+• Orario: [Ora]
+• Servizio: [Servizio]
+• Presso: Nico Villano - Via Corigliano 6
+
+La aspettiamo puntualmente.
+
+Per informazioni: Tel. 3204283508 | Email: nicovillano@libero.it
+
+Cordiali saluti,
+Nico Villano',
 '["Ora", "Servizio"]'),
 
-('cancellation', 'Cancellazione Appuntamento - Nico Villano',
-'Gentile [Nome], confermiamo la cancellazione del suo appuntamento per [Servizio] del [Data] alle [Ora]. Per nuove prenotazioni: Tel. 3204283508 - nicovillano@libero.it. Cordiali saluti, Nico Villano',
+('cancellation', 'Conferma Cancellazione - Nico Villano',
+'Gentile [Nome],
+
+Confermiamo la cancellazione del suo appuntamento:
+
+• Servizio: [Servizio]
+• Data: [Data]
+• Orario: [Ora]
+
+Per nuove prenotazioni, non esiti a contattarci:
+Tel. 3204283508 | Email: nicovillano@libero.it
+
+Cordiali saluti,
+Nico Villano
+Consulenza Fiscale e Patronato',
 '["Nome", "Servizio", "Data", "Ora"]'),
 
-('closure_emergency', 'Annullamento Appuntamento',
-'Gentile [Nome], il suo appuntamento di oggi alle [Ora] è stato annullato per [Motivo]. La ricontatteremo al più presto per riprogrammare. Ci scusiamo per l''inconveniente. Nico Villano - 3204283508',
+('closure_emergency', 'Modifica Appuntamento - Nico Villano',
+'Gentile [Nome],
+
+A causa di [Motivo], il suo appuntamento di oggi alle [Ora] deve essere riprogrammato.
+
+Il nostro staff la contatterà al più presto per concordare una nuova data.
+
+Ci scusiamo per l''inconveniente.
+
+Nico Villano
+Tel. 3204283508',
 '["Nome", "Ora", "Motivo"]'),
 
-('closure_planned', 'Annullamento Appuntamento',
-'Gentile [Nome], il suo appuntamento del [Data] alle [Ora] per [Servizio] è stato annullato per [Motivo]. La ricontatteremo per riprogrammare. Ci scusiamo per l''inconveniente. Nico Villano - Via Corigliano 6 - Tel. 3204283508',
+('closure_planned', 'Riprogrammazione Appuntamento - Nico Villano',
+'Gentile [Nome],
+
+Il suo appuntamento del [Data] alle [Ora] per [Servizio] deve essere riprogrammato a causa di [Motivo].
+
+Il nostro staff la contatterà per concordare una nuova data.
+
+Ci scusiamo per l''inconveniente.
+
+Nico Villano
+Via Corigliano 6 - Tel. 3204283508',
 '["Nome", "Data", "Ora", "Servizio", "Motivo"]'),
 
-('closure_vacation', 'Annullamento Appuntamento',
-'Gentile [Nome], il suo appuntamento del [Data] è stato annullato per chiusura estiva. Saremo di nuovo operativi dal [DataRiapertura]. La ricontatteremo per riprogrammare. Nico Villano - 3204283508',
+('closure_vacation', 'Riprogrammazione Appuntamento - Nico Villano',
+'Gentile [Nome],
+
+Il suo appuntamento del [Data] deve essere riprogrammato a causa della chiusura estiva.
+
+Saremo nuovamente operativi dal [DataRiapertura] e la contatteremo per concordare una nuova data.
+
+Cordiali saluti,
+Nico Villano
+Tel. 3204283508',
 '["Nome", "Data", "DataRiapertura"]')
 ON CONFLICT (template_name) DO NOTHING;
 
