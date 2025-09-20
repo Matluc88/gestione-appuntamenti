@@ -20,6 +20,9 @@ async function initializeDatabase() {
     await pool.query(schema);
     console.log('✅ Schema creato');
     
+    const { runMigrations } = require('./migrationRunner');
+    await runMigrations();
+    
     const seeds = fs.readFileSync(seedsPath, 'utf8');
     await pool.query(seeds);
     console.log('✅ Dati iniziali inseriti');
