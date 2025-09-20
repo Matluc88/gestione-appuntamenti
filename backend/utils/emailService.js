@@ -12,6 +12,42 @@ const replaceVariables = (template, variables) => {
   return content;
 };
 
+const createHtmlTemplate = (textContent, variables) => {
+  const htmlContent = textContent.replace(/\n/g, '<br>');
+  
+  return `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nico Villano - Servizi di Consulenza</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin: 0;">Nico Villano</h2>
+    <p style="margin: 5px 0; color: #666;">Servizi di Consulenza Fiscale e Patronato</p>
+  </div>
+  
+  <div style="background-color: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    ${htmlContent}
+  </div>
+  
+  <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
+    <p><strong>Nico Villano</strong><br>
+    Via Corigliano 6<br>
+    Tel: 3204283508<br>
+    Email: nicovillano@libero.it</p>
+    
+    <p style="margin-top: 15px;">
+      Se non desideri più ricevere queste comunicazioni, 
+      <a href="mailto:nicovillano@libero.it?subject=Richiesta%20Cancellazione%20Email" style="color: #007bff;">clicca qui per cancellarti</a>.
+    </p>
+  </div>
+</body>
+</html>`;
+};
+
 const logEmailActivity = async (appointmentId, emailType, status, error = null) => {
   try {
     await pool.query(
@@ -77,9 +113,24 @@ const sendConfirmationEmail = async (appointment) => {
         email: process.env.EMAIL_FROM,
         name: 'Nico Villano'
       },
+      replyTo: {
+        email: process.env.EMAIL_FROM,
+        name: 'Nico Villano'
+      },
       subject: subject,
       text: body,
-      html: body.replace(/\n/g, '<br>')
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'X-Entity-Ref-ID': `appointment-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'appointment-confirmation'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'confirmation'
+      }
     };
 
     const result = await sendEmailWithRetry(msg);
@@ -124,9 +175,24 @@ const sendCancellationEmail = async (appointment) => {
         email: process.env.EMAIL_FROM,
         name: 'Nico Villano'
       },
+      replyTo: {
+        email: process.env.EMAIL_FROM,
+        name: 'Nico Villano'
+      },
       subject: subject,
       text: body,
-      html: body.replace(/\n/g, '<br>')
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'X-Entity-Ref-ID': `appointment-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'appointment-cancellation'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'cancellation'
+      }
     };
 
     const result = await sendEmailWithRetry(msg);
@@ -171,9 +237,24 @@ const sendReminderEmail = async (appointment, reminderType = '24h') => {
         email: process.env.EMAIL_FROM,
         name: 'Nico Villano'
       },
+      replyTo: {
+        email: process.env.EMAIL_FROM,
+        name: 'Nico Villano'
+      },
       subject: subject,
       text: body,
-      html: body.replace(/\n/g, '<br>')
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'X-Entity-Ref-ID': `appointment-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'appointment-reminder'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'reminder'
+      }
     };
 
     const result = await sendEmailWithRetry(msg);
@@ -227,9 +308,24 @@ const sendClosureNotificationEmail = async (appointment, closure) => {
         email: process.env.EMAIL_FROM,
         name: 'Nico Villano'
       },
+      replyTo: {
+        email: process.env.EMAIL_FROM,
+        name: 'Nico Villano'
+      },
       subject: subject,
       text: body,
-      html: body.replace(/\n/g, '<br>')
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'X-Entity-Ref-ID': `appointment-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'appointment-closure'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'closure'
+      }
     };
 
     const result = await sendEmailWithRetry(msg);

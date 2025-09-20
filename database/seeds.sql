@@ -11,16 +11,16 @@ INSERT INTO services (name, slug, requires_upload, requires_notes, has_options, 
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO email_templates (template_name, subject, body, variables) VALUES
-('confirmation', 'Conferma Prenotazione', 
-'Gentile [Nome], la sua prenotazione per [Servizio] è confermata per [Data] alle [Ora]. Per cancellare: [Link]. Nico Villano - Via Corigliano 6 - Tel. 3204283508', 
+('confirmation', 'Conferma Prenotazione - Nico Villano', 
+'Gentile [Nome], la sua prenotazione per [Servizio] è confermata per [Data] alle [Ora]. DETTAGLI: Servizio [Servizio] presso Nico Villano, Via Corigliano 6. Per cancellare (almeno 24h prima): [Link]. Info: Tel. 3204283508 - nicovillano@libero.it', 
 '["Nome", "Servizio", "Data", "Ora", "Link"]'),
 
-('reminder', 'Promemoria Appuntamento',
-'Promemoria: domani alle [Ora] ha appuntamento per [Servizio]. Per info: 3204283508 - nicovillano@libero.it',
+('reminder', 'Promemoria Appuntamento - Nico Villano',
+'Promemoria: domani alle [Ora] ha appuntamento per [Servizio] presso Nico Villano, Via Corigliano 6. La aspettiamo puntualmente. Per info: Tel. 3204283508 - nicovillano@libero.it',
 '["Ora", "Servizio"]'),
 
-('cancellation', 'Cancellazione Appuntamento',
-'Gentile [Nome], la sua prenotazione per [Servizio] del [Data] alle [Ora] è stata cancellata con successo. Nico Villano - Tel. 3204283508',
+('cancellation', 'Cancellazione Appuntamento - Nico Villano',
+'Gentile [Nome], confermiamo la cancellazione del suo appuntamento per [Servizio] del [Data] alle [Ora]. Per nuove prenotazioni: Tel. 3204283508 - nicovillano@libero.it. Cordiali saluti, Nico Villano',
 '["Nome", "Servizio", "Data", "Ora"]'),
 
 ('closure_emergency', 'Annullamento Appuntamento',
