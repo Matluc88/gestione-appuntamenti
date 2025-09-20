@@ -48,13 +48,23 @@ const createHtmlTemplate = (textContent, variables) => {
 </html>`;
 };
 
-const logEmailActivity = async (appointmentId, emailType, status, error = null) => {
+const logEmailActivity = async (appointmentId, emailType, status, error = null, deliveryDetails = null) => {
   try {
     await pool.query(
       `INSERT INTO email_logs (appointment_id, email_type, status, error_message, sent_at) 
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
       [appointmentId, emailType, status, error]
     );
+    
+    if (process.env.LOG_EMAIL_DETAILS === 'true') {
+      console.log(`📧 Email Activity: ${emailType} | Status: ${status} | Appointment: ${appointmentId}`);
+      if (deliveryDetails) {
+        console.log(`📊 Delivery Details:`, deliveryDetails);
+      }
+      if (error) {
+        console.error(`❌ Email Error:`, error);
+      }
+    }
   } catch (logError) {
     console.error('Error logging email activity:', logError);
   }
@@ -107,15 +117,18 @@ const sendConfirmationEmail = async (appointment) => {
     const subject = replaceVariables(template.subject, variables);
     const body = replaceVariables(template.body, variables);
 
+    const fromEmail = process.env.CUSTOM_DOMAIN === 'true' ? process.env.CUSTOM_EMAIL_FROM : process.env.EMAIL_FROM;
+    const fromName = process.env.EMAIL_FROM_NAME || 'Nico Villano';
+
     const msg = {
       to: appointment.customer_email,
       from: {
-        email: process.env.EMAIL_FROM,
-        name: 'Nico Villano'
+        email: fromEmail,
+        name: fromName
       },
       replyTo: {
-        email: process.env.EMAIL_FROM,
-        name: 'Nico Villano'
+        email: fromEmail,
+        name: fromName
       },
       subject: subject,
       text: body,
@@ -134,7 +147,12 @@ const sendConfirmationEmail = async (appointment) => {
     };
 
     const result = await sendEmailWithRetry(msg);
-    await logEmailActivity(appointment.id, 'confirmation', 'sent');
+    await logEmailActivity(appointment.id, 'confirmation', 'sent', null, {
+      attempt: result.attempt,
+      from: fromEmail,
+      to: appointment.customer_email,
+      domain_authenticated: process.env.DOMAIN_AUTHENTICATED === 'true'
+    });
     console.log(`✅ Email conferma inviata a: ${appointment.customer_email} (tentativo ${result.attempt})`);
     
     return { success: true };
