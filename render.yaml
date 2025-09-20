@@ -17,6 +17,8 @@ services:
         sync: false
       - key: EMAIL_FROM
         value: nicovillano@libero.it
+      - key: UNSUBSCRIBE_EMAIL
+        value: nicovillano@libero.it
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
