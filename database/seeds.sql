@@ -103,7 +103,26 @@ Saremo nuovamente operativi dal [DataRiapertura] e la contatteremo per concordar
 Cordiali saluti,
 Nico Villano
 Tel. 3204283508',
-'["Nome", "Data", "DataRiapertura"]')
+'["Nome", "Data", "DataRiapertura"]'),
+
+('admin_notification', 'Nuovo Appuntamento Prenotato - Gestione Appuntamenti',
+'Nuovo appuntamento prenotato:
+
+DETTAGLI CLIENTE:
+• Nome: [Nome]
+• Email: [Email]
+• Telefono: [Telefono]
+
+DETTAGLI APPUNTAMENTO:
+• Servizio: [Servizio]
+• Data: [Data]
+• Orario: [Ora]
+• Note: [Note]
+
+Accedi al pannello admin per gestire l''appuntamento.
+
+Sistema Gestione Appuntamenti',
+'["Nome", "Email", "Telefono", "Servizio", "Data", "Ora", "Note"]')
 ON CONFLICT (template_name) DO NOTHING;
 
 INSERT INTO app_settings (setting_key, setting_value, setting_type, description) VALUES

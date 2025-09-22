@@ -51,6 +51,7 @@ router.post('/', validateAppointment, async (req, res) => {
 
     try {
       await emailService.sendConfirmationEmail(appointment);
+      await emailService.sendAdminNotificationEmail(appointment);
       await emailService.scheduleReminders(appointment);
     } catch (emailError) {
       console.error('Email/reminder error (appointment still created):', emailError.message);
