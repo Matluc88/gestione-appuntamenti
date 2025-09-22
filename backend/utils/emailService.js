@@ -501,12 +501,150 @@ const processPendingReminders = async () => {
   }
 };
 
+const sendInformationRequestEmail = async (appointment) => {
+  try {
+    const templateResult = await pool.query(
+      'SELECT * FROM email_templates WHERE template_name = $1 AND is_active = true',
+      ['information_request']
+    );
+
+    if (templateResult.rows.length === 0) {
+      await logEmailActivity(appointment.id, 'information_request', 'failed', 'Template information_request non trovato');
+      throw new Error('Template information_request non trovato');
+    }
+
+    const template = templateResult.rows[0];
+    const fileCount = appointment.files_uploaded ? JSON.parse(appointment.files_uploaded).length : 0;
+
+    const variables = {
+      Nome: `${appointment.customer_name} ${appointment.customer_surname}`,
+      Servizio: appointment.service_type,
+      Note: appointment.notes || 'Nessuna nota',
+      FileCount: fileCount.toString()
+    };
+
+    const subject = replaceVariables(template.subject, variables);
+    const body = replaceVariables(template.body, variables);
+
+    const fromEmail = process.env.CUSTOM_DOMAIN === 'true' ? process.env.CUSTOM_EMAIL_FROM : process.env.EMAIL_FROM;
+    const fromName = process.env.EMAIL_FROM_NAME || 'Nico Villano';
+
+    const msg = {
+      to: appointment.customer_email,
+      from: {
+        email: fromEmail,
+        name: fromName
+      },
+      replyTo: {
+        email: fromEmail,
+        name: fromName
+      },
+      subject: subject,
+      text: body,
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'X-Entity-Ref-ID': `information-request-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'information-request'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'information_request'
+      }
+    };
+
+    const result = await sendEmailWithRetry(msg);
+    await logEmailActivity(appointment.id, 'information_request', 'sent', null, {
+      attempt: result.attempt,
+      from: fromEmail,
+      to: appointment.customer_email
+    });
+    console.log(`✅ Email richiesta informazioni inviata a: ${appointment.customer_email} (tentativo ${result.attempt})`);
+    
+    return { success: true };
+  } catch (error) {
+    await logEmailActivity(appointment.id, 'information_request', 'failed', error.message);
+    console.error('❌ Errore invio email richiesta informazioni:', error.message);
+    throw error;
+  }
+};
+
+const sendAdminInformationRequestEmail = async (appointment) => {
+  try {
+    const templateResult = await pool.query(
+      'SELECT * FROM email_templates WHERE template_name = $1 AND is_active = true',
+      ['admin_information_request']
+    );
+
+    if (templateResult.rows.length === 0) {
+      await logEmailActivity(appointment.id, 'admin_information_request', 'failed', 'Template admin_information_request non trovato');
+      throw new Error('Template admin_information_request non trovato');
+    }
+
+    const template = templateResult.rows[0];
+    const fileCount = appointment.files_uploaded ? JSON.parse(appointment.files_uploaded).length : 0;
+
+    const variables = {
+      Nome: `${appointment.customer_name} ${appointment.customer_surname}`,
+      Email: appointment.customer_email,
+      Telefono: appointment.customer_phone,
+      Servizio: appointment.service_type,
+      Note: appointment.notes || 'Nessuna nota',
+      FileCount: fileCount.toString()
+    };
+
+    const subject = replaceVariables(template.subject, variables);
+    const body = replaceVariables(template.body, variables);
+
+    const fromEmail = process.env.CUSTOM_DOMAIN === 'true' ? process.env.CUSTOM_EMAIL_FROM : process.env.EMAIL_FROM;
+    const fromName = process.env.EMAIL_FROM_NAME || 'Gestione Appuntamenti';
+
+    const msg = {
+      to: process.env.EMAIL_FROM,
+      from: {
+        email: fromEmail,
+        name: fromName
+      },
+      replyTo: {
+        email: appointment.customer_email,
+        name: `${appointment.customer_name} ${appointment.customer_surname}`
+      },
+      subject: subject,
+      text: body,
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'X-Entity-Ref-ID': `information-request-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'admin-information-request'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'admin_information_request'
+      }
+    };
+
+    const result = await sendEmailWithRetry(msg);
+    await logEmailActivity(appointment.id, 'admin_information_request', 'sent');
+    console.log(`✅ Email notifica admin richiesta informazioni inviata a: ${process.env.EMAIL_FROM} (tentativo ${result.attempt})`);
+    
+    return { success: true };
+  } catch (error) {
+    await logEmailActivity(appointment.id, 'admin_information_request', 'failed', error.message);
+    console.error('❌ Errore invio email notifica admin richiesta informazioni:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   sendConfirmationEmail,
   sendCancellationEmail,
   sendReminderEmail,
   sendClosureNotificationEmail,
   sendAdminNotificationEmail,
+  sendInformationRequestEmail,
+  sendAdminInformationRequestEmail,
   scheduleReminders,
   processPendingReminders,
   logEmailActivity,
