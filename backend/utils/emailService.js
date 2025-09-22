@@ -514,7 +514,7 @@ const sendInformationRequestEmail = async (appointment) => {
     }
 
     const template = templateResult.rows[0];
-    const fileCount = appointment.files_uploaded ? JSON.parse(appointment.files_uploaded).length : 0;
+    const fileCount = appointment.files_uploaded && appointment.files_uploaded !== 'null' && appointment.files_uploaded !== '' ? JSON.parse(appointment.files_uploaded).length : 0;
 
     const variables = {
       Nome: `${appointment.customer_name} ${appointment.customer_surname}`,
@@ -584,7 +584,7 @@ const sendAdminInformationRequestEmail = async (appointment) => {
     }
 
     const template = templateResult.rows[0];
-    const fileCount = appointment.files_uploaded ? JSON.parse(appointment.files_uploaded).length : 0;
+    const fileCount = appointment.files_uploaded && appointment.files_uploaded !== 'null' && appointment.files_uploaded !== '' ? JSON.parse(appointment.files_uploaded).length : 0;
 
     const variables = {
       Nome: `${appointment.customer_name} ${appointment.customer_surname}`,

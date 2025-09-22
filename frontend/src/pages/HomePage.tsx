@@ -133,7 +133,7 @@ const HomePage: React.FC = () => {
       }
 
       await axios.post(`${API_BASE_URL}/api/appointments`, requestData)
-      navigate('/conferma')
+      navigate('/conferma', { state: { isInformationRequest: isInformationMode } })
     } catch (error: any) {
       console.error('Submission error:', error)
       alert(error.response?.data?.error || 'Errore nell\'invio della richiesta')
