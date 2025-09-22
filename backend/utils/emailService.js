@@ -358,6 +358,77 @@ const sendClosureNotificationEmail = async (appointment, closure) => {
   }
 };
 
+const sendAdminNotificationEmail = async (appointment) => {
+  try {
+    const templateResult = await pool.query(
+      'SELECT * FROM email_templates WHERE template_name = $1 AND is_active = true',
+      ['admin_notification']
+    );
+
+    if (templateResult.rows.length === 0) {
+      await logEmailActivity(appointment.id, 'admin_notification', 'failed', 'Template admin_notification non trovato');
+      throw new Error('Template admin_notification non trovato');
+    }
+
+    const template = templateResult.rows[0];
+
+    const variables = {
+      Nome: `${appointment.customer_name} ${appointment.customer_surname}`,
+      Email: appointment.customer_email,
+      Telefono: appointment.customer_phone,
+      Servizio: appointment.service_type,
+      Data: new Date(appointment.appointment_date).toLocaleDateString('it-IT'),
+      Ora: appointment.appointment_time,
+      Note: appointment.notes || 'Nessuna nota'
+    };
+
+    const subject = replaceVariables(template.subject, variables);
+    const body = replaceVariables(template.body, variables);
+
+    const fromEmail = process.env.CUSTOM_DOMAIN === 'true' ? process.env.CUSTOM_EMAIL_FROM : process.env.EMAIL_FROM;
+    const fromName = process.env.EMAIL_FROM_NAME || 'Gestione Appuntamenti';
+
+    const msg = {
+      to: process.env.EMAIL_FROM,
+      from: {
+        email: fromEmail,
+        name: fromName
+      },
+      replyTo: {
+        email: appointment.customer_email,
+        name: `${appointment.customer_name} ${appointment.customer_surname}`
+      },
+      subject: subject,
+      text: body,
+      html: createHtmlTemplate(body, variables),
+      headers: {
+        'X-Entity-Ref-ID': `appointment-${appointment.id}`,
+        'X-Mailer': 'Gestione Appuntamenti v1.0'
+      },
+      categories: ['transactional', 'admin-notification'],
+      customArgs: {
+        appointment_id: appointment.id.toString(),
+        email_type: 'admin_notification'
+      }
+    };
+
+    const result = await sendEmailWithRetry(msg);
+    await logEmailActivity(appointment.id, 'admin_notification', 'sent', null, {
+      attempt: result.attempt,
+      from: fromEmail,
+      to: process.env.EMAIL_FROM,
+      domain_authenticated: process.env.DOMAIN_AUTHENTICATED === 'true'
+    });
+    console.log(`✅ Email notifica admin inviata a: ${process.env.EMAIL_FROM} (tentativo ${result.attempt})`);
+    
+    return { success: true };
+  } catch (error) {
+    await logEmailActivity(appointment.id, 'admin_notification', 'failed', error.message);
+    console.error('❌ Errore invio email notifica admin:', error.message);
+    throw error;
+  }
+};
+
 const scheduleReminders = async (appointment) => {
   try {
     const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
@@ -435,6 +506,7 @@ module.exports = {
   sendCancellationEmail,
   sendReminderEmail,
   sendClosureNotificationEmail,
+  sendAdminNotificationEmail,
   scheduleReminders,
   processPendingReminders,
   logEmailActivity,
