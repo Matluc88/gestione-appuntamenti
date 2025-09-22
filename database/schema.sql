@@ -7,13 +7,15 @@ CREATE TABLE IF NOT EXISTS appointments (
     customer_phone VARCHAR(20) NOT NULL,
     customer_email VARCHAR(255) NOT NULL,
     notes TEXT,
-    appointment_date DATE NOT NULL,
-    appointment_time TIME NOT NULL,
+    appointment_date DATE,
+    appointment_time TIME,
     cancel_token VARCHAR(255) UNIQUE NOT NULL,
     status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'cancelled', 'completed')),
     files_uploaded JSONB DEFAULT '[]',
     patronato_service VARCHAR(50),
     cancelled_by VARCHAR(20),
+    privacy_consent BOOLEAN DEFAULT FALSE,
+    marketing_consent BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

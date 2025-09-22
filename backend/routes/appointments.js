@@ -19,20 +19,26 @@ router.post('/', validateAppointment, async (req, res) => {
       appointment_date,
       appointment_time,
       patronato_service,
-      files_uploaded = []
+      files_uploaded = [],
+      is_information_request = false,
+      privacy_consent,
+      marketing_consent = false
     } = req.body;
 
-    if (!isValidBookingDate(appointment_date)) {
-      return res.status(400).json({ error: 'Data non valida per prenotazione' });
-    }
+    // Only validate booking date for actual appointments
+    if (!is_information_request) {
+      if (!isValidBookingDate(appointment_date)) {
+        return res.status(400).json({ error: 'Data non valida per prenotazione' });
+      }
 
-    const existingAppointment = await pool.query(
-      'SELECT id FROM appointments WHERE appointment_date = $1 AND appointment_time = $2 AND status = $3',
-      [appointment_date, appointment_time, 'confirmed']
-    );
+      const existingAppointment = await pool.query(
+        'SELECT id FROM appointments WHERE appointment_date = $1 AND appointment_time = $2 AND status = $3',
+        [appointment_date, appointment_time, 'confirmed']
+      );
 
-    if (existingAppointment.rows.length > 0) {
-      return res.status(400).json({ error: 'Slot già occupato' });
+      if (existingAppointment.rows.length > 0) {
+        return res.status(400).json({ error: 'Slot già occupato' });
+      }
     }
 
     const cancelToken = uuidv4();
@@ -40,21 +46,28 @@ router.post('/', validateAppointment, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO appointments 
        (service_type, customer_name, customer_surname, customer_phone, customer_email, 
-        notes, appointment_date, appointment_time, cancel_token, files_uploaded, patronato_service)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        notes, appointment_date, appointment_time, cancel_token, files_uploaded, patronato_service,
+        privacy_consent, marketing_consent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [service_type, customer_name, customer_surname, customer_phone, customer_email,
-       notes, appointment_date, appointment_time, cancelToken, JSON.stringify(files_uploaded), patronato_service]
+       notes, appointment_date || null, appointment_time || null, cancelToken, 
+       JSON.stringify(files_uploaded), patronato_service, privacy_consent, marketing_consent]
     );
 
     const appointment = result.rows[0];
 
     try {
-      await emailService.sendConfirmationEmail(appointment);
-      await emailService.sendAdminNotificationEmail(appointment);
-      await emailService.scheduleReminders(appointment);
+      if (is_information_request) {
+        await emailService.sendInformationRequestEmail(appointment);
+        await emailService.sendAdminInformationRequestEmail(appointment);
+      } else {
+        await emailService.sendConfirmationEmail(appointment);
+        await emailService.sendAdminNotificationEmail(appointment);
+        await emailService.scheduleReminders(appointment);
+      }
     } catch (emailError) {
-      console.error('Email/reminder error (appointment still created):', emailError.message);
+      console.error('Email error (request still created):', emailError.message);
     }
 
     res.status(201).json({
@@ -64,12 +77,13 @@ router.post('/', validateAppointment, async (req, res) => {
         service_type: appointment.service_type,
         appointment_date: appointment.appointment_date,
         appointment_time: appointment.appointment_time,
-        cancel_token: appointment.cancel_token
+        cancel_token: appointment.cancel_token,
+        is_information_request: !appointment.appointment_date
       }
     });
   } catch (error) {
     console.error('Error creating appointment:', error);
-    res.status(500).json({ error: 'Errore nella creazione dell\'appuntamento' });
+    res.status(500).json({ error: 'Errore nella creazione della richiesta' });
   }
 });
 

@@ -28,8 +28,11 @@ const HomePage: React.FC = () => {
     customer_phone: '',
     customer_email: '',
     notes: '',
-    patronato_service: ''
+    patronato_service: '',
+    privacy_consent: false,
+    marketing_consent: false
   })
+  const [isInformationMode, setIsInformationMode] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -96,30 +99,44 @@ const HomePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!selectedService || !selectedDate || !selectedTime) {
-      alert('Seleziona servizio, data e orario')
+    if (!selectedService) {
+      alert('Seleziona un servizio')
+      return
+    }
+
+    if (!formData.privacy_consent) {
+      alert('È necessario accettare il consenso al trattamento dati')
+      return
+    }
+    
+    if (!isInformationMode && (!selectedDate || !selectedTime)) {
+      alert('Seleziona data e orario per l\'appuntamento')
       return
     }
 
     try {
       setLoading(true)
-      const appointmentData = {
+      const requestData: any = {
         service_type: selectedService.name,
         ...formData,
-        appointment_date: selectedDate,
-        appointment_time: selectedTime,
-        files_uploaded: uploadedFiles
+        files_uploaded: uploadedFiles,
+        is_information_request: isInformationMode
+      }
+
+      if (!isInformationMode) {
+        requestData.appointment_date = selectedDate
+        requestData.appointment_time = selectedTime
       }
 
       if (selectedService.has_options && formData.patronato_service) {
-        appointmentData.patronato_service = formData.patronato_service
+        requestData.patronato_service = formData.patronato_service
       }
 
-      await axios.post(`${API_BASE_URL}/api/appointments`, appointmentData)
+      await axios.post(`${API_BASE_URL}/api/appointments`, requestData)
       navigate('/conferma')
     } catch (error: any) {
-      console.error('Booking error:', error)
-      alert(error.response?.data?.error || 'Errore nella prenotazione')
+      console.error('Submission error:', error)
+      alert(error.response?.data?.error || 'Errore nell\'invio della richiesta')
     } finally {
       setLoading(false)
     }
@@ -192,6 +209,20 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={isInformationMode}
+                onChange={(e) => setIsInformationMode(e.target.checked)}
+                className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <span className="text-sm font-medium text-blue-900">
+                INVIA INFORMAZIONI e FILES - Invia solo richiesta informazioni senza prenotare appuntamento
+              </span>
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -249,43 +280,45 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="inline w-4 h-4 mr-1" />
-                Data
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={getMinDate()}
-                max={getMaxDate()}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              />
+          {!isInformationMode && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="inline w-4 h-4 mr-1" />
+                  Data
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={getMinDate()}
+                  max={getMaxDate()}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Clock className="inline w-4 h-4 mr-1" />
+                  Orario
+                </label>
+                <select
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  required
+                  disabled={!selectedDate}
+                >
+                  <option value="">Seleziona orario</option>
+                  {availableSlots.map(slot => (
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock className="inline w-4 h-4 mr-1" />
-                Orario
-              </label>
-              <select
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-                disabled={!selectedDate}
-              >
-                <option value="">Seleziona orario</option>
-                {availableSlots.map(slot => (
-                  <option key={slot} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
 
           {selectedService?.requires_upload && (
             <div>
@@ -323,12 +356,50 @@ const HomePage: React.FC = () => {
             />
           </div>
 
+          <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-3">
+            <h3 className="text-sm font-medium text-gray-900">Trattamento Dati Personali</h3>
+            
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={formData.privacy_consent}
+                onChange={(e) => setFormData({...formData, privacy_consent: e.target.checked})}
+                className="mt-1 mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                required
+              />
+              <span className="text-xs text-gray-700">
+                <strong>Consenso obbligatorio:</strong> Acconsento al trattamento dei miei dati personali 
+                per la gestione della richiesta secondo l'informativa privacy ai sensi del GDPR (Reg. UE 2016/679).
+                <a href="mailto:nicovillano@libero.it?subject=Richiesta%20Informativa%20Privacy" 
+                   className="text-primary-600 hover:text-primary-800 ml-1">
+                  Richiedi informativa completa
+                </a>
+              </span>
+            </label>
+            
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                checked={formData.marketing_consent}
+                onChange={(e) => setFormData({...formData, marketing_consent: e.target.checked})}
+                className="mt-1 mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <span className="text-xs text-gray-700">
+                <strong>Consenso opzionale:</strong> Acconsento a ricevere comunicazioni commerciali 
+                e promozionali sui servizi offerti.
+              </span>
+            </label>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-primary-600 text-white py-3 px-6 rounded-md hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Prenotazione in corso...' : 'Prenota Appuntamento'}
+            {loading ? 
+            (isInformationMode ? 'Invio in corso...' : 'Prenotazione in corso...') : 
+            (isInformationMode ? 'Invia Richiesta Informazioni' : 'Prenota Appuntamento')
+          }
           </button>
         </form>
 

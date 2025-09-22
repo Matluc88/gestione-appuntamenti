@@ -479,10 +479,10 @@ const AppointmentsPage: React.FC = () => {
                   {appointments.map((appointment) => (
                     <tr key={appointment.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(appointment.appointment_date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {appointment.appointment_time}
+                        {appointment.appointment_date ? 
+                          `${formatDate(appointment.appointment_date)} ${appointment.appointment_time}` :
+                          <span className="text-blue-600 font-medium">Richiesta Info</span>
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {appointment.service_type}
@@ -645,7 +645,10 @@ const AppointmentsPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Data e Ora</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {formatDate(selectedAppointment.appointment_date)} alle {selectedAppointment.appointment_time}
+                    {selectedAppointment.appointment_date ? 
+                      `${formatDate(selectedAppointment.appointment_date)} alle ${selectedAppointment.appointment_time}` :
+                      <span className="text-blue-600 font-medium">Richiesta Informazioni (senza appuntamento)</span>
+                    }
                   </p>
                 </div>
                 <div>

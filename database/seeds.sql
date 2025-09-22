@@ -122,7 +122,45 @@ DETTAGLI APPUNTAMENTO:
 Accedi al pannello admin per gestire l''appuntamento.
 
 Sistema Gestione Appuntamenti',
-'["Nome", "Email", "Telefono", "Servizio", "Data", "Ora", "Note"]')
+'["Nome", "Email", "Telefono", "Servizio", "Data", "Ora", "Note"]'),
+
+('information_request', 'Richiesta Informazioni Ricevuta - Nico Villano',
+'Gentile [Nome],
+
+Abbiamo ricevuto la sua richiesta di informazioni per il servizio: [Servizio]
+
+DETTAGLI RICHIESTA:
+• Servizio: [Servizio]
+• Note: [Note]
+• File allegati: [FileCount] file
+
+La contatteremo al più presto per fornirle le informazioni richieste.
+
+Cordiali saluti,
+Nico Villano
+Consulenza Fiscale e Patronato
+Tel. 3204283508 | Email: nicovillano@libero.it',
+'["Nome", "Servizio", "Note", "FileCount"]'),
+
+('admin_information_request', 'Nuova Richiesta Informazioni - Gestione Appuntamenti',
+'Nuova richiesta informazioni ricevuta:
+
+DETTAGLI CLIENTE:
+• Nome: [Nome]
+• Email: [Email]
+• Telefono: [Telefono]
+
+DETTAGLI RICHIESTA:
+• Servizio: [Servizio]
+• Note: [Note]
+• File allegati: [FileCount] file
+
+TIPO: Richiesta informazioni (non appuntamento)
+
+Accedi al pannello admin per gestire la richiesta.
+
+Sistema Gestione Appuntamenti',
+'["Nome", "Email", "Telefono", "Servizio", "Note", "FileCount"]')
 ON CONFLICT (template_name) DO NOTHING;
 
 INSERT INTO app_settings (setting_key, setting_value, setting_type, description) VALUES
